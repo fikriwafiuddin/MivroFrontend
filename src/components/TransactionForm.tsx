@@ -31,6 +31,7 @@ import type {
 } from "@/types"
 import {
   useCreateTransaction,
+  useProcessOCRTransaction,
   useUpdateTransaction,
 } from "@/services/hooks/transactionHook"
 import { useNavigate } from "react-router"
@@ -40,7 +41,8 @@ import { useMemo } from "react"
 import CategoryItemSkeleton from "./CategoryItemSkeleton"
 import { useUserPreference } from "@/store/useUserPreference"
 import DatePicker from "./DatePicker"
-import { Loader2Icon } from "lucide-react"
+import { CameraIcon, Loader2Icon } from "lucide-react"
+import { useRef } from "react"
 
 interface TransactionFormProps {
   transaction?: Transaction<string>
@@ -66,6 +68,10 @@ function TransactionForm({ transaction }: TransactionFormProps) {
     useGetAllCategories()
   const navigate = useNavigate()
   const currencyCode = useUserPreference((state) => state.currencyCode)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { mutate: processOCR, isPending: processingOCR } =
+    useProcessOCRTransaction()
 
   const currentType = form.watch("type")
 
@@ -88,7 +94,7 @@ function TransactionForm({ transaction }: TransactionFormProps) {
   useMemo(() => {
     const currentCategoryId = form.getValues("category")
     const categoryExists = filteredCategories.some(
-      (cat) => cat._id === currentCategoryId
+      (cat) => cat._id === currentCategoryId,
     )
 
     if (currentCategoryId && !categoryExists) {
@@ -136,7 +142,7 @@ function TransactionForm({ transaction }: TransactionFormProps) {
               })
             }
           },
-        }
+        },
       )
     } else {
       create(transactionData, {
@@ -167,6 +173,38 @@ function TransactionForm({ transaction }: TransactionFormProps) {
     }
   }
 
+  const handleOcrClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      processOCR(file, {
+        onSuccess: (response) => {
+          const data = response.data
+          if (data.amount) form.setValue("amount", data.amount)
+          if (data.notes) form.setValue("notes", data.notes)
+          if (data.type) form.setValue("type", data.type)
+          if (data.date) {
+            const parsedDate = new Date(data.date)
+            if (!isNaN(parsedDate.getTime())) {
+              form.setValue("date", parsedDate)
+            }
+          }
+          if (data.categoryId) {
+            form.setValue("category", data.categoryId)
+          }
+
+          e.target.value = ""
+        },
+        onError: () => {
+          e.target.value = ""
+        },
+      })
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -175,6 +213,35 @@ function TransactionForm({ transaction }: TransactionFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-6">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2 border-dashed border-2 h-16 text-lg"
+            onClick={handleOcrClick}
+            disabled={processingOCR}
+          >
+            {processingOCR ? (
+              <Loader2Icon className="animate-spin" />
+            ) : (
+              <>
+                <CameraIcon className="size-6" />
+                <span>Scan Receipt with AI</span>
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Upload an image of your receipt to automatically fill the form
+          </p>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField

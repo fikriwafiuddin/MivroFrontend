@@ -48,7 +48,7 @@ export const useCreateTransaction = () => {
         toast.error(error.response.data.message)
       } else {
         toast.error(
-          error.message || "Network error. Please check your connection."
+          error.message || "Network error. Please check your connection.",
         )
       }
     },
@@ -83,7 +83,7 @@ export const useUpdateTransaction = () => {
         toast.error(error.response.data.message)
       } else {
         toast.error(
-          error.message || "Network error. Please check your connection."
+          error.message || "Network error. Please check your connection.",
         )
       }
     },
@@ -118,7 +118,7 @@ export const useRemoveTransaction = () => {
         toast.error(error.response.data.message)
       } else {
         toast.error(
-          error.message || "Network error. Please check your connection."
+          error.message || "Network error. Please check your connection.",
         )
       }
     },
@@ -145,5 +145,26 @@ export const useGetAllTransactions = (request: TransactionFilter) => {
       return await transactionApi.getAll(request, token)
     },
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export const useProcessOCRTransaction = () => {
+  const { getToken } = useAuth()
+
+  return useMutation({
+    mutationFn: async (image: File) => {
+      const token = await getToken()
+      if (!token) {
+        throw new Error("Authentication token is missing")
+      }
+      return await transactionApi.processOCR(image, token)
+    },
+    onSuccess: (response) => {
+      toast.success(response.message)
+    },
+    onError: (error: AxiosError<ErrorResponse>) => {
+      console.error("OCR Error:", error)
+      toast.error(error.response?.data?.message || "Failed to process receipt")
+    },
   })
 }

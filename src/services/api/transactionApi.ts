@@ -10,7 +10,7 @@ import type { AxiosResponse } from "axios"
 
 const create = async (
   data: Omit<FormDataTransaction, "time">,
-  token: string
+  token: string,
 ) => {
   const response = await axiosInstance.post("/transactions", data, {
     headers: {
@@ -23,7 +23,7 @@ const create = async (
 const update = async (
   id: string,
   data: Omit<FormDataTransaction, "time">,
-  token: string
+  token: string,
 ) => {
   const response = await axiosInstance.put(`/transactions/${id}`, data, {
     headers: {
@@ -58,10 +58,24 @@ const getAll = async (request: TransactionFilter, token: string) => {
   }
 }
 
+const processOCR = async (image: File, token: string) => {
+  const formData = new FormData()
+  formData.append("image", image)
+
+  const response = await axiosInstance.post("/transactions/ocr", formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "multipart/form-data",
+    },
+  })
+  return response.data
+}
+
 const transactionApi = {
   create,
   update,
   remove,
   getAll,
+  processOCR,
 }
 export default transactionApi
