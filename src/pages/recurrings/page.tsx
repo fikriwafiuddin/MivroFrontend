@@ -72,7 +72,7 @@ function RecurringTransactionsPage() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 bg-muted/30 rounded-lg border-2 border-dashed">
+        <div className="flex flex-col items-center justify-center py-20 bg-muted/30 rounded-lg border-2 border-dashed text-center">
           <RefreshCwIcon className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
           <h3 className="text-xl font-semibold text-muted-foreground">
             No recurring transactions found
