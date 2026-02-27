@@ -43,6 +43,7 @@ import { useUserPreference } from "@/store/useUserPreference"
 import DatePicker from "./DatePicker"
 import { CameraIcon, Loader2Icon } from "lucide-react"
 import { useRef } from "react"
+import { toast } from "sonner"
 
 interface TransactionFormProps {
   transaction?: Transaction<string>
@@ -180,6 +181,10 @@ function TransactionForm({ transaction }: TransactionFormProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size >= 2 * 1024 * 1024) {
+        toast.error("File size exceeds 2MB limit")
+        return
+      }
       processOCR(file, {
         onSuccess: (response) => {
           const data = response.data
